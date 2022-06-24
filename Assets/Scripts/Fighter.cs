@@ -6,33 +6,41 @@ using UnityEngine.XR;
 
 public class Fighter : MonoBehaviour
 {
+    //vvvremove in favor of an action eventvvvv
     [SerializeField] private Fighter _otherFighter;
-    [SerializeField] private float _movementSpeed = 20000f;
-    [SerializeField] private bool isFacingRight = true;
     [SerializeField] private HitDetection lightHitBox;
-    [SerializeField] private bool _isPlayerOne;
-    [SerializeField] private Transform playerTransform;
+
+    [SerializeField] private float _movementSpeed = 20000f;
     [SerializeField] private float timeToWaitBetweenAttacks = .5f;
+    [SerializeField] private float timeToSpawnLightHitBoxStart = .25f;
+    [SerializeField] private float timeToSpawnLightHitBoxEnd = .25f;
+    [SerializeField] private bool _isPlayerOne;
+    [SerializeField] private bool isFacingRight = true;
 
     private Rigidbody _rigidbody;
     private Animator _animator;
 
     private float _jumpForce = 400f;
+    private float _health = 100f;
 
     private bool _isTouchingGround = true;
 
     private Quaternion facingRight;
     private Quaternion facingLeft;
 
-    private float _health = 100f;
+
     private bool _isAttacking;
     private bool _isBlocking;
     private bool _canAttack = true;
+
     private WaitForSeconds _attackTimer;
+    private WaitForSeconds _lightHitBoxTimerStart;
+    private WaitForSeconds _lightHitBoxTimerEnd;
 
     private BaseCharacterState _currentState;
-    public BaseCharacterState _regularState = new RegularState();
     private BaseCharacterState _blockState = new BlockState();
+
+    public BaseCharacterState _regularState = new RegularState();
 
     public GameObject _otherHitBox;
 
@@ -40,7 +48,12 @@ public class Fighter : MonoBehaviour
     {
         _rigidbody = GetComponent<Rigidbody>();
         _animator = GetComponent<Animator>();
+
         _attackTimer = new WaitForSeconds(timeToWaitBetweenAttacks);
+        _lightHitBoxTimerStart = new WaitForSeconds(timeToSpawnLightHitBoxStart);
+        _lightHitBoxTimerEnd = new WaitForSeconds(timeToSpawnLightHitBoxEnd);
+
+        lightHitBox.gameObject.SetActive(false);
     }
 
     private void Start()
@@ -51,8 +64,6 @@ public class Fighter : MonoBehaviour
 
     private void InitPlayerDirections()
     {
-        lightHitBox.gameObject.SetActive(false);
-
         facingRight = transform.rotation;
         transform.Rotate(Vector3.up, 180f);
         facingLeft = transform.rotation;
@@ -69,7 +80,6 @@ public class Fighter : MonoBehaviour
         if (other.CompareTag("HitBox"))
         {
             _otherHitBox = other.gameObject;
-            Debug.Log("within enemy hit box range");
             SwitchState(_blockState);
         }
     }
@@ -78,7 +88,6 @@ public class Fighter : MonoBehaviour
     {
         if (other.CompareTag("HitBox"))
         {
-            Debug.Log("exiting");
             Block(false);
             SwitchState(_regularState);
         }
@@ -191,18 +200,17 @@ public class Fighter : MonoBehaviour
             Attack(true);
             //turn off standing L hit box
             _canAttack = false;
-            StartCoroutine(WaitForTimeDelay());
+            StartCoroutine(WaitForAttackTimeDelay());
             //check range
             if (lightHitBox.CanHit())
             {
                 _otherFighter.TakeDamage(10f);
             }
-
             //if is crouch crouched light attack
         }
     }
 
-    private IEnumerator WaitForTimeDelay()
+    private IEnumerator WaitForAttackTimeDelay()
     {
         yield return _attackTimer;
         Attack(false);
@@ -220,12 +228,22 @@ public class Fighter : MonoBehaviour
     {
         _isAttacking = value;
 
-        lightHitBox.gameObject.SetActive(value);
-
         if (!value)
+        {
             return;
+        }
 
+        StartCoroutine(WaitForLightHitBoxTimeDelay());
         _animator.SetTrigger("isAttacking");
+    }
+
+
+    private IEnumerator WaitForLightHitBoxTimeDelay()
+    {
+        yield return _lightHitBoxTimerStart;
+        lightHitBox.gameObject.SetActive(true);
+        yield return _lightHitBoxTimerEnd;
+        lightHitBox.gameObject.SetActive(false);
     }
 
     private void Crouch(bool value)
@@ -336,6 +354,7 @@ public class BlockState : BaseCharacterState
     {
         //block mechanic
         fighter.BlockInput();
+        //if there isn't a hit box than don't react
         if (fighter._otherHitBox != null && !fighter._otherHitBox.activeSelf)
         {
             fighter.Block(false);

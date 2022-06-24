@@ -2400,12 +2400,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _otherFighter: {fileID: 8917520519990778307}
-  _movementSpeed: 20000
-  isFacingRight: 1
   lightHitBox: {fileID: 1015710434}
+  _movementSpeed: 20000
+  timeToWaitBetweenAttacks: 1
+  timeToSpawnLightHitBoxStart: 0.25
+  timeToSpawnLightHitBoxEnd: 0.3
   _isPlayerOne: 0
-  playerTransform: {fileID: 4747518474582634049}
-  timeToWaitBetweenAttacks: 0.5
+  isFacingRight: 1
   _otherHitBox: {fileID: 0}
 --- !u!54 &8917520519990778306
 Rigidbody:

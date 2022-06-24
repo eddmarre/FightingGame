@@ -32,7 +32,8 @@ public class GameManger : MonoBehaviour
     private void Update()
     {
         _player1.FaceRightWay(_player2);
-        _player2.FaceLeftWay(_player1);
+        _player2.FaceRightWay(_player1);
+        
         if (Input.GetMouseButtonDown(1))
         {
             _player2.GetComponent<Animator>().SetTrigger("isAttacking");
